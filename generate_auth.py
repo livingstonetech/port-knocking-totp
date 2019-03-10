@@ -13,7 +13,7 @@ def generate_qrcode(host, secret):
     Generates QRCode image. Saves in the fashion <hostname>.png
     """
     if host is None:
-        host = "hostname"
+        host = "qr_image"
     qr_code = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -89,9 +89,4 @@ if __name__ == "__main__":
         else:
             generate_qrcode(host=ARGS.hostname, secret=ARGS.secret)
     else:
-        ANS = str(input("Generate Code [Y/n]?"))
-        if ("y", "Y") in ANS:
-            generate_code(outfile=ARGS.outfile, host=ARGS.hostname)
-        else:
-            print("[!] Exiting...")
-            exit()
+        generate_code(outfile=ARGS.outfile, host=ARGS.hostname)
