@@ -1,7 +1,11 @@
-import qrcode
-import pyotp
-import os
+#!/usr/bin/env python3
+"""
+Script to generate Google Auth TOTP Secret and the QR Image for the same
+"""
 from argparse import ArgumentParser
+import os
+import pyotp
+import qrcode
 
 
 def generate_qrcode(host, secret):
@@ -10,7 +14,7 @@ def generate_qrcode(host, secret):
     """
     if host is None:
         host = "hostname"
-    qr = qrcode.QRCode(
+    qr_code = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_L,
         box_size=10,
@@ -18,10 +22,10 @@ def generate_qrcode(host, secret):
 
     data = "otpauth://totp/knocker@{0}?secret={1}".format(host, secret)
 
-    qr.add_data(data)
-    qr.make(fit=True)
+    qr_code.add_data(data)
+    qr_code.make(fit=True)
     print("[+] Generating QRCode...")
-    img = qr.make_image(fill_color="black", back_color="white")
+    img = qr_code.make_image(fill_color="black", back_color="white")
     print("[+] Done! QRCode image saved to {0}.png".format(host))
     img.save("{0}.png".format(host), "PNG")
 
@@ -40,35 +44,35 @@ def generate_code(outfile="secret.code", host=None):
     generate_qrcode(host, secret)
 
     print("[+] Saving secret to file {0}".format(outfile))
-    with open(outfile, "w+") as f:
-        f.write(secret)
+    with open(outfile, "w+") as out_file:
+        out_file.write(secret)
         print("[+] Done!")
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser(
+    PARSER = ArgumentParser(
         description="\
         Utility to generate QRCode Image and a random base32 \
         secret that will be used by the knocker program and can also be \
         scanned by the Google Authenticator App.")
-    parser.add_argument(
+    PARSER.add_argument(
         "-qr",
         "--only-qr",
         action="store_true",
         help="Specify to only generate QRCode Image. Requires --secret.")
-    parser.add_argument(
+    PARSER.add_argument(
         "-H",
         "--hostname",
         default=None,
         type=str,
         help="Hostname of the machine.")
-    parser.add_argument(
+    PARSER.add_argument(
         "-s",
         "--secret",
         default=None,
         type=str,
         help="Specified secret to use for creating QRCode Image.")
-    parser.add_argument(
+    PARSER.add_argument(
         "-o",
         "--outfile",
         default="secret.code",
@@ -76,19 +80,18 @@ if __name__ == "__main__":
         help="Name of file where the generated SECRET will be stored.\
          Default is 'secret.code'")
 
-    args = parser.parse_args()
+    ARGS = PARSER.parse_args()
 
-    if args.only_qr:
-        if args.secret is None:
+    if ARGS.only_qr:
+        if ARGS.secret is None:
             print("[!] No SECRET specified. Exiting...")
             exit()
         else:
-            generate_qrcode(host=args.hostname, secret=args.secret)
+            generate_qrcode(host=ARGS.hostname, secret=ARGS.secret)
     else:
-        answer = str(input("Generate Code [Y/n]?"))
-        if answer is "Y" or answer is "y":
-            generate_code(outfile=args.outfile, host=args.hostname)
+        ANS = str(input("Generate Code [Y/n]?"))
+        if ("y", "Y") in ANS:
+            generate_code(outfile=ARGS.outfile, host=ARGS.hostname)
         else:
             print("[!] Exiting...")
             exit()
-
