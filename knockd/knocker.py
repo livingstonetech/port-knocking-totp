@@ -113,37 +113,25 @@ def check_sanity(config_path):
     print("[+] All systems go!")
 
 
-def populate_config(config, knockd_conf):
-    """
-    Takes input a dictionary of the parsed config.json and knockd_conf
-    skeleton and replaces the values in the skeleton file with the config
-    values.
-    """
-    knockd_conf = knockd_conf.format(
-        log_file=config['log_file'],
-        interface=config['interface'],
-        timeout=config['timeout'],
-        port=config['port'],
-        knock_1=config['knock_1'],
-        knock_2=config['knock_2'])
-    return knockd_conf
-
-
-def write_to_knockd_conf(first_knock, second_knock, port, config):
-    global conf_iptables
-    conf_iptables_formatted = conf_iptables.format(
-        str(first_knock),
-        str(second_knock),
-        str(port))
-    with open("/etc/knockd.conf", "w+") as cnf:
-        cnf.write(conf_iptables_formatted)
+def write_to_knockd_conf(first_knock, second_knock, port, config, cf_template):
+    knocker_config = config["KNOCKER"]
+    knockd_config = config["KNOCKD"]
+    cf_formatted = cf_template.format(
+        log_file=knockd_config["log_file"],
+        interface=knocker_config["interface"],
+        knock1=first_knock,
+        knock2=second_knock,
+        port=port,
+        timeout=knocker_config["timeout"])
+    with open(knockd_config["knockd_config_file"], "w+") as k_cnf:
+        k_cnf.write(cf_formatted)
 
     subprocess.run(["systemctl", "restart", "knockd"])
 
 
 if __name__ == "__main__":
     """
-        Three arguments: ./knocker.py [OAUTH_SECRET] [PORT]
+        Entry point
     """
     PARSER = ArgumentParser(
         description="Port knocking utility that leverages knockd and iptables")
@@ -165,12 +153,18 @@ if __name__ == "__main__":
     else:
         print("[!] Skipping sanity check. NOT SAFE.")
 
-    exit()
+    CONF_ARGS = ConfigParser()
+    CONF_ARGS.read(ARGS.config)
+    AUTH = CONF_ARGS['KNOCKER']['totp_secret']
+    PORT = CONF_ARGS['KNOCKER']['port']
+    CF_TEMPLATE = open(CONF_ARGS["KNOCKD"]["knockd_config_file_template"], "r")
+    CF_TEMPLATE = CF_TEMPLATE.read()
     CODE = pyotp.TOTP(AUTH)
+    print("[+] Starting knockd...")
     # Initial Run.
     OTP = CODE.now()
     knock1, knock2 = get_knocks(int(OTP))
-    write_to_knockd_conf(knock1, knock2, port)
+    write_to_knockd_conf(knock1, knock2, PORT, CONF_ARGS, CF_TEMPLATE)
     last_otp = OTP
 
     while True:
@@ -181,12 +175,17 @@ if __name__ == "__main__":
                 if OTP == last_otp:
                     continue
                 knock1, knock2 = get_knocks(int(OTP))
-                print("Knocks:\t%d\t%d" % (knock1, knock2))
-                write_to_knockd_conf(knock1, knock2, port, config)
+                print("[+] Knocks:\t%d\t%d" % (knock1, knock2))
+                write_to_knockd_conf(knock1,
+                                     knock2,
+                                     PORT,
+                                     CONF_ARGS,
+                                     CF_TEMPLATE)
                 last_otp = OTP
         except KeyboardInterrupt:
-            print("Exiting...")
+            print("[!] Exiting...")
             break
 
         except Exception as e:
-            print("ERROR: %s" % str(e))
+            print("[!] Something unforseen happened.")
+            print("[!] Exception: {}".format(e))
