@@ -52,30 +52,24 @@ def check_sanity(config_path):
             print("----> [!] Please run this file as root")
             print("----> [!] Exiting...")
             exit()
-        else:
-            print("----> [+] Looks good!")
         print("[+] Checking if 'knockd' exists...")
         if shutil.which("knockd") is None:
             print("----> [!] Knockd is not installed or not found")
             print("----> [!] Please install and then run")
             print("----> [!] Exiting...")
             exit()
-        else:
-            print("----> [+] Looks good!")
         print("[+] Checking if iptables exists...")
         if shutil.which("iptables") is None:
             print("----> [!] iptables was not detected")
             print("----> [!] Exiting...")
             exit()
-        else:
-            print("----> [!] Looks good!")
         print("[+] Checking config file")
         try:
             config_file = open(config_path, "r")
             print("----> [+] Found file: {}".format(config_path))
             config_file.close()
         except Exception as e:
-            print("----> [!] Somethign unforseen happened.")
+            print("----> [!] Something unforseen happened.")
             print("----> [!] Exception: {}".format(e))
             print("----> [!] Exiting...")
             exit()
@@ -94,8 +88,6 @@ def check_sanity(config_path):
                         print("------------> [!] Empty!")
                         print("------------> [!] Please fill: {}".format(key))
                         exit()
-                    else:
-                        print("------------> [+] Looks good!")
             print("[+] Checking secret...")
             if len(config_args['KNOCKER']['totp_secret']) != 16:
                 print("----> [!] Secret does not seem right! Please check it.")
@@ -103,7 +95,7 @@ def check_sanity(config_path):
                 print("----> [!] Exiting...")
                 exit()
             else:
-                print("----> [+] Looks good!")
+                print("----> [+] Secret looks valid.")
         except Exception as e:
             print("----> [!] Something unforseen happened.")
             print("----> [!] Exception: {}".format(e))
@@ -117,10 +109,10 @@ def write_to_knockd_conf(first_knock, second_knock, port, config, cf_template):
     knocker_config = config["KNOCKER"]
     knockd_config = config["KNOCKD"]
     cf_formatted = cf_template.format(
-        log_file=knockd_config["log_file"],
+        log_file=knockd_config["knockd_log_file"],
         interface=knocker_config["interface"],
-        knock1=first_knock,
-        knock2=second_knock,
+        knock_1=first_knock,
+        knock_2=second_knock,
         port=port,
         timeout=knocker_config["timeout"])
     with open(knockd_config["knockd_config_file"], "w+") as k_cnf:
