@@ -3,7 +3,7 @@
 Script to generate Google Auth TOTP Secret and the QR Image for the same
 """
 from argparse import ArgumentParser
-import os
+import platform
 import pyotp
 import qrcode
 
@@ -30,7 +30,10 @@ def generate_qrcode(host, secret):
     img.save("{0}.png".format(host), "PNG")
     print("[*] Displaying QR in terminal.")
     print("[*] Please scan this in your Authenticator App")
-    qr_code.print_ascii()
+    if platform.system() == "Windows":
+        qr_code.print_ascii()
+    else:
+        qr_code.print_tty()
 
 
 def generate_code(outfile="secret.code", host=None):
@@ -43,7 +46,7 @@ def generate_code(outfile="secret.code", host=None):
     print("[+] Generating Random Secret...")
     secret = pyotp.random_base32()
     if host is None:
-        host = os.uname()[1]
+        host = platform.node()
     generate_qrcode(host, secret)
 
     print("[+] Saving secret to file {0}".format(outfile))
