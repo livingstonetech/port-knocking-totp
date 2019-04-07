@@ -28,6 +28,9 @@ def generate_qrcode(host, secret):
     img = qr_code.make_image(fill_color="black", back_color="white")
     print("[+] Done! QRCode image saved to {0}.png".format(host))
     img.save("{0}.png".format(host), "PNG")
+    print("[*] Displaying QR in terminal.")
+    print("[*] Please scan this in your Authenticator App")
+    qr_code.print_ascii()
 
 
 def generate_code(outfile="secret.code", host=None):
