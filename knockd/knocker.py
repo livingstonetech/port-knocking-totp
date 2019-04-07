@@ -125,8 +125,12 @@ def write_to_knockd_conf(first_knock, second_knock, port, config, cf_template):
         timeout=knocker_config["timeout"])
     with open(knockd_config["knockd_config_file"], "w+") as k_cnf:
         k_cnf.write(cf_formatted)
+        print("----> [+] Written new config to: {}".format(
+            knockd_config["knockd_config_file"]))
 
+    print("----> [+] Restarting service...")
     subprocess.run(["systemctl", "restart", "knockd"])
+    print("----> [+] Done!\n")
 
 
 if __name__ == "__main__":
