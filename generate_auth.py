@@ -30,7 +30,7 @@ def generate_qrcode(host, secret):
     img.save("{0}.png".format(host), "PNG")
     print("[*] Displaying QR in terminal.")
     print("[*] Please scan this in your Authenticator App")
-    qr_code.print_ascii()
+    qr_code.print_tty()
 
 
 def generate_code(outfile="secret.code", host=None):
