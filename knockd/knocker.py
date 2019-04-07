@@ -122,7 +122,7 @@ def write_to_knockd_conf(first_knock, second_knock, port, config, cf_template):
 
     print("----> [+] Restarting service...")
     subprocess.run(["systemctl", "restart", "knockd"])
-    print("----> [+] Done!\n")
+    print("----> [+] Done!")
 
 
 if __name__ == "__main__":
@@ -160,6 +160,7 @@ if __name__ == "__main__":
     # Initial Run.
     OTP = CODE.now()
     knock1, knock2 = get_knocks(int(OTP))
+    print("[+] Knocks:\t{}\t{}".format(knock1, knock2))
     write_to_knockd_conf(knock1, knock2, PORT, CONF_ARGS, CF_TEMPLATE)
     last_otp = OTP
 
@@ -171,7 +172,7 @@ if __name__ == "__main__":
                 if OTP == last_otp:
                     continue
                 knock1, knock2 = get_knocks(int(OTP))
-                print("[+] Knocks:\t%d\t%d" % (knock1, knock2))
+                print("[+] Knocks:\t{}\t{}".format(knock1, knock2))
                 write_to_knockd_conf(knock1,
                                      knock2,
                                      PORT,
