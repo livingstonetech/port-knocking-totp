@@ -7,6 +7,7 @@ import subprocess
 import platform
 import os
 import shutil
+import requests
 
 
 def get_four_digit(knock):
@@ -27,14 +28,23 @@ def check_sanity(config_path):
     """
     Function to check if the program won't crash when it is run.
     Following are the parameters that are checked for:
+        - Checks if we are running in an ec2 instance on AWS
         - Checks if NOT Windows
         - Checks if root
         - Checks if knockd service exists
-        - Checks if iptables exists
+        - Checks if awscli exists
+        - Checks if aws config exists
         - Checks if specified config file exists and is accessible
         - Checks if config file is valid (Syntax)
         - Checks if the "totp_secret" option of the config file is filled
     """
+    print("[+] Checking if we are running in an ec2 instance on AWS...")
+    try:
+        requests.get('http://169.254.169.254/')
+    except requests.exceptions.ConnectionError:
+        print("----> [!] NOT an ec2 instance.")
+        print("----> [!] Exiting...")
+        exit(1)
     os_name = platform.system()
     print("[+] Detecting operating system...")
     if os_name == "Windows":
@@ -44,35 +54,39 @@ def check_sanity(config_path):
                                                             win_32[2]))
         print("----> [!] We do not support Windows (yet).")
         print("----> [!] Exiting...")
-        exit()
+        exit(1)
     else:
         print("----> [+] Detected OS: {}".format(os_name))
         print("[+] Checking for root privileges...")
         if os.geteuid() != 0:
-            print("----> [!] Please run this file as root")
+            print("----> [!] Please run this file as root or using sudo")
             print("----> [!] Exiting...")
-            exit()
+            exit(1)
         print("[+] Checking if 'knockd' exists...")
         if shutil.which("knockd") is None:
             print("----> [!] Knockd is not installed or not found")
             print("----> [!] Please install and then run")
             print("----> [!] Exiting...")
-            exit()
-        print("[+] Checking if iptables exists...")
-        if shutil.which("iptables") is None:
-            print("----> [!] iptables was not detected")
+            exit(1)
+        print("[+] Checking if 'awscli' exists...")
+        if shutil.which("aws") is None:
+            print("----> [!] awscli was not detected")
+            print("----> [!] Please install and then run")
             print("----> [!] Exiting...")
-            exit()
+            exit(1)
+
+        # Write check of aws configuration file /root/.aws/credentials for required permissions.
+
         print("[+] Checking config file")
         try:
             config_file = open(config_path, "r")
             print("----> [+] Found file: {}".format(config_path))
             config_file.close()
-        except Exception as e:
+        except Exception as configfile_exception:
             print("----> [!] Something unforeseen happened.")
-            print("----> [!] Exception: {}".format(e))
+            print("----> [!] Exception: {}".format(configfile_exception))
             print("----> [!] Exiting...")
-            exit()
+            exit(1)
         print("[+] Checking config file")
         try:
             config_args = ConfigParser()
@@ -87,22 +101,22 @@ def check_sanity(config_path):
                     if sec[key] == "":
                         print("------------> [!] Empty!")
                         print("------------> [!] Please fill: {}".format(key))
-                        exit()
+                        exit(1)
             print("[+] Checking secret...")
             if len(config_args['KNOCKER']['totp_secret']) != 16:
-                print("----> [!] Secret does not seem right! Please check it.")
+                print("----> [!] Secret invalid.")
                 print("----> [!] Run generate_auth.py to create a new secret")
                 print("----> [!] Exiting...")
-                exit()
+                exit(1)
             else:
                 print("----> [+] Secret looks valid.")
-        except Exception as e:
+        except Exception as sanity_exception:
             print("----> [!] Something unforeseen happened.")
-            print("----> [!] Exception: {}".format(e))
+            print("----> [!] Exception: {}".format(sanity_exception))
             print("----> [!] Exiting...")
             exit()
 
-    print("[+] All systems go!")
+    print("[+] All checks succeeded!")
 
 
 def write_to_knockd_conf(first_knock, second_knock, port, config, cf_template):
@@ -114,6 +128,9 @@ def write_to_knockd_conf(first_knock, second_knock, port, config, cf_template):
         knock_1=first_knock,
         knock_2=second_knock,
         port=port,
+        # Try to get security group from the instance itself. Might be a security risk though because it will change
+        # configuration of all instances who might have this security group. Need to think about this and decide.
+        security_group=knocker_config["security_group_id"],
         timeout=knocker_config["timeout"])
     with open(knockd_config["knockd_config_file"], "w+") as k_cnf:
         k_cnf.write(cf_formatted)
@@ -121,8 +138,9 @@ def write_to_knockd_conf(first_knock, second_knock, port, config, cf_template):
             knockd_config["knockd_config_file"]))
 
     print("----> [+] Restarting service...")
+
+    # Use restart_command instead of static command here
     subprocess.run(["systemctl", "restart", "knockd"])
-    print("----> [+] Done!")
 
 
 if __name__ == "__main__":
@@ -130,7 +148,7 @@ if __name__ == "__main__":
         Entry point
     """
     PARSER = ArgumentParser(
-        description="Port knocking utility that leverages knockd and iptables")
+        description="Port knocking utility that leverages knockd and aws security groups")
     PARSER.add_argument(
         "-c",
         "--config",
