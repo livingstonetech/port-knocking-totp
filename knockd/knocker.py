@@ -69,7 +69,7 @@ def check_sanity(config_path):
             print("----> [+] Found file: {}".format(config_path))
             config_file.close()
         except Exception as e:
-            print("----> [!] Something unforseen happened.")
+            print("----> [!] Something unforeseen happened.")
             print("----> [!] Exception: {}".format(e))
             print("----> [!] Exiting...")
             exit()
@@ -97,7 +97,7 @@ def check_sanity(config_path):
             else:
                 print("----> [+] Secret looks valid.")
         except Exception as e:
-            print("----> [!] Something unforseen happened.")
+            print("----> [!] Something unforeseen happened.")
             print("----> [!] Exception: {}".format(e))
             print("----> [!] Exiting...")
             exit()
@@ -184,5 +184,5 @@ if __name__ == "__main__":
             break
 
         except Exception as e:
-            print("[!] Something unforseen happened.")
+            print("[!] Something unforeseen happened.")
             print("[!] Exception: {}".format(e))
