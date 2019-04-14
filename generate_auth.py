@@ -6,6 +6,7 @@ from argparse import ArgumentParser
 import platform
 import pyotp
 import qrcode
+import sys
 
 
 def generate_qrcode(host, secret):
@@ -88,10 +89,14 @@ if __name__ == "__main__":
 
     ARGS = PARSER.parse_args()
 
+    if not len(sys.argv) > 1:
+        PARSER.print_help()
+        sys.exit(1)
+
     if ARGS.only_qr:
         if ARGS.secret is None:
             print("[!] No SECRET specified. Exiting...")
-            exit()
+            exit(1)
         else:
             generate_qrcode(host=ARGS.hostname, secret=ARGS.secret)
     else:
