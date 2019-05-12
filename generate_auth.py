@@ -4,9 +4,9 @@ Script to generate Google Auth TOTP Secret and the QR Image for the same
 """
 from argparse import ArgumentParser
 import platform
+import sys
 import pyotp
 import qrcode
-import sys
 
 
 def generate_qrcode(host, secret):
@@ -94,7 +94,7 @@ if __name__ == "__main__":
 
     ARGS = PARSER.parse_args()
 
-    if not len(sys.argv) > 1:
+    if len(sys.argv) <= 1:
         PARSER.print_help()
         sys.exit(1)
 
