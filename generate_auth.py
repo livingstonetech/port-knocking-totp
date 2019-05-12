@@ -86,6 +86,11 @@ if __name__ == "__main__":
         type=str,
         help="Name of file where the generated SECRET will be stored.\
          Default is 'secret.code'")
+    PARSER.add_argument(
+        "-a",
+        "--auto",
+        action="store_true",
+        help="Auto mode. Run with default settings")
 
     ARGS = PARSER.parse_args()
 
@@ -93,11 +98,13 @@ if __name__ == "__main__":
         PARSER.print_help()
         sys.exit(1)
 
+    if ARGS.auto:
+        print("[+] Auto mode.")
+        generate_code()
+
     if ARGS.only_qr:
         if ARGS.secret is None:
             print("[!] No SECRET specified. Exiting...")
             exit(1)
         else:
             generate_qrcode(host=ARGS.hostname, secret=ARGS.secret)
-    else:
-        generate_code(outfile=ARGS.outfile, host=ARGS.hostname)
