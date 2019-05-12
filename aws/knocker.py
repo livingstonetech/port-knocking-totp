@@ -119,7 +119,7 @@ def check_sanity(config_path):
     print("[+] All checks succeeded!")
 
 
-def write_to_knockd_conf(first_knock, second_knock, port, config, cf_template):
+def write_to_knockd_conf(first_knock, second_knock, old_first_knock, old_second_knock, port, config, cf_template):
     knocker_config = config["KNOCKER"]
     knockd_config = config["KNOCKD"]
     cf_formatted = cf_template.format(
@@ -128,10 +128,28 @@ def write_to_knockd_conf(first_knock, second_knock, port, config, cf_template):
         knock_1=first_knock,
         knock_2=second_knock,
         port=port,
-        # Try to get security group from the instance itself. Might be a security risk though because it will change
-        # configuration of all instances who might have this security group. Need to think about this and decide.
         security_group=knocker_config["security_group_id"],
         timeout=knocker_config["timeout"])
+    subprocess.run([
+        'aws',
+        'ec2',
+        'revoke-security-group-ingress',
+        '--group-id',
+        knocker_config["security_group_id"],
+        '--ip-permissions',
+        'IpProtocol=tcp,FromPort={port},ToPort={port},IpRanges=[{{CidrIp=0.0.0.0/0}}]'.format(port=old_first_knock),
+        'IpProtocol=tcp,FromPort={port},ToPort={port},IpRanges=[{{CidrIp=0.0.0.0/0}}]'.format(port=old_second_knock)
+    ])
+    subprocess.run([
+        'aws',
+        'ec2',
+        'authorize-security-group-ingress',
+        '--group-id',
+        knocker_config["security_group_id"],
+        '--ip-permissions',
+        'IpProtocol=tcp,FromPort={port},ToPort={port},IpRanges=[{{CidrIp=0.0.0.0/0}}]'.format(port=first_knock),
+        'IpProtocol=tcp,FromPort={port},ToPort={port},IpRanges=[{{CidrIp=0.0.0.0/0}}]'.format(port=second_knock)
+    ])
     with open(knockd_config["knockd_config_file"], "w+") as k_cnf:
         k_cnf.write(cf_formatted)
         print("----> [+] Written new config to: {}".format(
@@ -179,7 +197,8 @@ if __name__ == "__main__":
     OTP = CODE.now()
     knock1, knock2 = get_knocks(int(OTP))
     print("[+] Knocks:\t{}\t{}".format(knock1, knock2))
-    write_to_knockd_conf(knock1, knock2, PORT, CONF_ARGS, CF_TEMPLATE)
+    write_to_knockd_conf(knock1, knock2, 0, 0, PORT, CONF_ARGS, CF_TEMPLATE)
+    knock1_old, knock2_old = knock1, knock2
     last_otp = OTP
 
     while True:
@@ -193,9 +212,12 @@ if __name__ == "__main__":
                 print("[+] Knocks:\t{}\t{}".format(knock1, knock2))
                 write_to_knockd_conf(knock1,
                                      knock2,
+                                     knock1_old,
+                                     knock2_old,
                                      PORT,
                                      CONF_ARGS,
                                      CF_TEMPLATE)
+                knock1_old, knock2_old = knock1, knock2
                 last_otp = OTP
         except KeyboardInterrupt:
             print("[!] Exiting...")
