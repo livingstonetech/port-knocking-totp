@@ -130,16 +130,17 @@ def write_to_knockd_conf(first_knock, second_knock, old_first_knock, old_second_
         port=port,
         security_group=knocker_config["security_group_id"],
         timeout=knocker_config["timeout"])
-    subprocess.run([
-        'aws',
-        'ec2',
-        'revoke-security-group-ingress',
-        '--group-id',
-        knocker_config["security_group_id"],
-        '--ip-permissions',
-        'IpProtocol=tcp,FromPort={port},ToPort={port},IpRanges=[{{CidrIp=0.0.0.0/0}}]'.format(port=old_first_knock),
-        'IpProtocol=tcp,FromPort={port},ToPort={port},IpRanges=[{{CidrIp=0.0.0.0/0}}]'.format(port=old_second_knock)
-    ])
+    if old_first_knock is not 0:
+        subprocess.run([
+            'aws',
+            'ec2',
+            'revoke-security-group-ingress',
+            '--group-id',
+            knocker_config["security_group_id"],
+            '--ip-permissions',
+            'IpProtocol=tcp,FromPort={port},ToPort={port},IpRanges=[{{CidrIp=0.0.0.0/0}}]'.format(port=old_first_knock),
+            'IpProtocol=tcp,FromPort={port},ToPort={port},IpRanges=[{{CidrIp=0.0.0.0/0}}]'.format(port=old_second_knock)
+        ])
     subprocess.run([
         'aws',
         'ec2',
