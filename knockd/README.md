@@ -17,9 +17,9 @@ restart_command -   Command used to restart knockd service
 ```
 ### Knockd
 ```
-knockd_config_file_template =   Template config file (knockd.config)
-knockd_log_file             =   Path to knockd log file
-knockd_config_file          =   Path to knockd config file
+knockd_config_file_template -   Template config file (knockd.config)
+knockd_log_file             -   Path to knockd log file
+knockd_config_file          -   Path to knockd config file
 ```
 
 ## Screenshots
@@ -37,3 +37,13 @@ optional arguments:
                         Path to Knocker config file.
   -f, --force           Skip checking of permissions and binaries
 ```
+
+## Flow
+This is a simple program. Does the following things:
+- Check if all settings and configs are valid
+- Calculate TOTP at the current instance
+- Change knockd.config with the latest values of TOTP
+- Restart knockd service
+- Repeat indefinitely
+
+For further explaination, refer to the linked article.
