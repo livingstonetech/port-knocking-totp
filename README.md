@@ -36,4 +36,9 @@ optional arguments:
 ```
 
 ## Further Reading
+https://medium.com/@moses.livingstone.tech/port-knocking-a1a1d4321877
+
+## Contributors
+- [Swapnil Kumbhar](https://github.com/SwapnilKumbhar)
+- [Akshay Shah](https://github.com/akshaynshah)
 
